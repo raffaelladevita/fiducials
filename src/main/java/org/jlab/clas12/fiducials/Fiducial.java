@@ -4,6 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFrame;
 import org.jlab.clas.physics.Particle;
 import org.jlab.detector.base.DetectorType;
@@ -32,6 +34,7 @@ import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.*;
 import org.jlab.logging.DefaultLogger;
 import org.jlab.utils.benchmark.ProgressPrintout;
+import org.jlab.utils.groups.IndexedList;
 import org.jlab.utils.options.OptionParser;
         
         
@@ -40,8 +43,8 @@ import org.jlab.utils.options.OptionParser;
  * @author devita
  */
 public class Fiducial {
-    
-    Map<TabGroup, Map<Integer,DataGroup>> dgs = new LinkedHashMap<>();
+    // detector,  observable  
+    Map<TabGroup, Map<Integer,IndexedList<DataGroup>>> dgs = new LinkedHashMap<>();
     
     double delta = 3;
     double[] thetas = {8, 15, 23};
@@ -51,6 +54,10 @@ public class Fiducial {
     DCGeant4Factory dcFactory = null;
     
     Random rand = new Random();
+    
+    private static final Logger LOGGER = Logger.getLogger(Fiducial.class.getName());
+    private static Level LEVEL = Level.CONFIG;
+ 
     
     public Fiducial() {
         this.createHistos();
@@ -87,9 +94,9 @@ public class Fiducial {
         DataGroup dgCut  = new DataGroup(3, 2);
         DataGroup dgEdge = new DataGroup(3, 2);
         DataGroup dgPhiT = new DataGroup(3, 2);
-        DataGroup dgEdg1 = new DataGroup(8, 6);
-        DataGroup dgEdg2 = new DataGroup(8, 6);
-        DataGroup dgEdg3 = new DataGroup(8, 6);
+        DataGroup dgEdg1 = new DataGroup(6, 5);
+        DataGroup dgEdg2 = new DataGroup(6, 5);
+        DataGroup dgEdg3 = new DataGroup(6, 5);
         DataGroup dgSecT = new DataGroup(3, 2);
         DataGroup dgEff  = new DataGroup(3, 2);
         for(DataType type : DataType.values()) {
@@ -120,7 +127,9 @@ public class Fiducial {
                     hi4.setLineColor(k+1);
                     dgPhiT.addDataSet(hi4, i+type.getId()*3);
                 }
-                H2F hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 80, -20, 20, 50, 0, 50);  
+                H2F hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 25, -10*0*region, 10*region, 30, 5, 35); 
+//                if(region==1)
+//                    hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 40, -10, 10, 30, 5, 35);   
                 hi5.setTitleX("edge (cm)"); 
                 hi5.setTitleY("#theta_t_r_a_j (deg)"); 
                 for(int k=0; k<6; k++) {
@@ -136,25 +145,32 @@ public class Fiducial {
                 dgEdge.addDataSet(hi5, i+type.getId()*3);
             }
         }
-        if(!dgs.containsKey(TabGroup.KINEMATICS))
-            dgs.put(TabGroup.KINEMATICS, new LinkedHashMap());
-        dgs.get(TabGroup.KINEMATICS).put(1, dgEB);
-        if(!dgs.containsKey(TabGroup.DC))
-            dgs.put(TabGroup.DC, new LinkedHashMap());
-        dgs.get(TabGroup.DC).put(1, dgTraj);
-        dgs.get(TabGroup.DC).put(2, dgCut);
-        dgs.get(TabGroup.DC).put(3, dgPhi);
-        dgs.get(TabGroup.DC).put(4, dgEdge);
-        dgs.get(TabGroup.DC).put(5, dgPhiT);
-        dgs.get(TabGroup.DC).put(61, dgEdg1);
-        dgs.get(TabGroup.DC).put(62, dgEdg2);
-        dgs.get(TabGroup.DC).put(63, dgEdg3);
-        dgs.get(TabGroup.DC).put(7, dgSecT);
-        dgs.get(TabGroup.DC).put(8, dgEff);
+        this.addDataGroup(TabGroup.KINEMATICS, 1, 0, 0, dgEB);
+        this.addDataGroup(TabGroup.DC, 1, 0, 0, dgTraj);
+        this.addDataGroup(TabGroup.DC, 2, 0, 0, dgCut);
+        this.addDataGroup(TabGroup.DC, 3, 0, 0, dgPhi);
+        this.addDataGroup(TabGroup.DC, 4, 0, 0, dgEdge);
+        this.addDataGroup(TabGroup.DC, 5, 0, 0, dgPhiT);
+        this.addDataGroup(TabGroup.DC, 6, 0, 1, dgEdg1);
+        this.addDataGroup(TabGroup.DC, 6, 0, 2, dgEdg2);
+        this.addDataGroup(TabGroup.DC, 6, 0, 3, dgEdg3);
+        this.addDataGroup(TabGroup.DC, 7, 0, 0, dgSecT);
+        this.addDataGroup(TabGroup.DC, 8, 0, 0, dgEff);
     }
     
     
-    public void processEvent(DataEvent event, int id, int particleId, int sec) {
+    private void addDataGroup(TabGroup tab, int observable, int sector, int layer, DataGroup dg) {
+        if(!dgs.containsKey(tab)) 
+            dgs.put(tab, new LinkedHashMap());
+        if(!dgs.get(tab).containsKey(observable)) 
+            dgs.get(tab).put(observable, new IndexedList(2));
+        
+        IndexedList<DataGroup> list = dgs.get(tab).get(observable);
+        if(!list.hasItem(sector, layer))
+            list.add(dg, sector, layer);
+    }
+    
+    public void processEvent(DataEvent event, int id, int selectedPid, int sec) {
         
         String type = DataType.getType(id).getName();
         
@@ -189,11 +205,12 @@ public class Fiducial {
                 int charge   = recPart.getByte("charge", pindex);
                 int status   = recPart.getShort("status", pindex);
                 int clas     = Math.abs(status)/1000;
-//                if(pid==0) pid=charge*211;
                 
-                if(pindex==0) continue;
-                if(pid==0 || clas!=2) continue;
-                if(particleId!=0 && pid!=particleId) continue;
+                if(pindex==0 || clas!=2) continue;
+                
+                if(selectedPid==0 && pid==0) pid=charge*211;
+                if(pid==0) continue;
+                if(selectedPid!=0 && Math.abs(pid)!=selectedPid) continue;
                 
                 int detector = recTraj.getInt("detector", i);
                 int layer    = recTraj.getInt("layer", i);
@@ -216,7 +233,7 @@ public class Fiducial {
                                              recPart.getFloat("vx", pindex),
                                              recPart.getFloat("vy", pindex),
                                              recPart.getFloat("vz", pindex));
-                if(part.p()<2) continue;
+                if(part.p()<1) continue;
                 
                 Point3D trajTilted = new Point3D(x, y, z);
                 Point3D trajLocal  = new Point3D(x, y, z);
@@ -235,24 +252,24 @@ public class Fiducial {
                     if((region<3 && charge<0) || (region==3 && charge>0)) continue;
                     
                     //System.out.println(region);
-                    dgs.get(TabGroup.DC).get(1).getH2F("hi"+type+region).fill(trajLocal.x(), trajLocal.y());
-                    if(edge>delta) dgs.get(TabGroup.DC).get(2).getH2F("hi"+type+region).fill(trajLocal.x(), trajLocal.y());
-                    dgs.get(TabGroup.DC).get(3).getH2F("hi"+type+region).fill(phi, theta);
+                    dgs.get(TabGroup.DC).get(1).getItem(0,0).getH2F("hi"+type+region).fill(trajLocal.x(), trajLocal.y());
+                    if(edge>delta) dgs.get(TabGroup.DC).get(2).getItem(0,0).getH2F("hi"+type+region).fill(trajLocal.x(), trajLocal.y());
+                    dgs.get(TabGroup.DC).get(3).getItem(0,0).getH2F("hi"+type+region).fill(phi, theta);
                     if(edge>0) {
-                        int side = (int) Math.signum(trajLocal.x());
-                        dgs.get(TabGroup.DC).get(4).getH2F("hi"+type+region).fill(edge*side, theta);
+                        int side = 1;//(int) Math.signum(trajLocal.x());
+                        dgs.get(TabGroup.DC).get(4).getItem(0,0).getH2F("hi"+type+region).fill(edge*side, theta);
                     }
                     if(Math.abs(theta-thetas[1])<dtheta){
                         for(int k=0; k<4; k++) {
                             if(k==0 || edge>-delta+delta*k) 
-                                dgs.get(TabGroup.DC).get(5).getH1F("hi"+type+region+k).fill(phi);
+                                dgs.get(TabGroup.DC).get(5).getItem(0,0).getH1F("hi"+type+region+k).fill(phi);
                         }
-                        if(edge>3) dgs.get(TabGroup.DC).get(7).getH1F("hi"+type+region+(sector-1)).fill(phi);
+                        if(edge>3) dgs.get(TabGroup.DC).get(7).getItem(0,0).getH1F("hi"+type+region+(sector-1)).fill(phi);
                     }
                 }
                 else if(detector==DetectorType.HTCC.getDetectorId()) {
-                    dgs.get(TabGroup.KINEMATICS).get(1).getH2F("hiptheta"+type).fill(part.p(), Math.toDegrees(part.theta()));
-                    dgs.get(TabGroup.KINEMATICS).get(1).getH2F("hiphitheta"+type).fill(Math.toDegrees(part.phi()), Math.toDegrees(part.theta()));
+                    dgs.get(TabGroup.KINEMATICS).get(1).getItem(0,0).getH2F("hiptheta"+type).fill(part.p(), Math.toDegrees(part.theta()));
+                    dgs.get(TabGroup.KINEMATICS).get(1).getItem(0,0).getH2F("hiphitheta"+type).fill(Math.toDegrees(part.phi()), Math.toDegrees(part.theta()));
                 }
             }		
         }
@@ -266,7 +283,7 @@ public class Fiducial {
             String type = DataType.getType(id).getName();
             int icol = (id+1)*2;
             for(int region=1; region<4; region++) {
-                H2F h2 = dgs.get(TabGroup.DC).get(4).getH2F("hi"+type+region);
+                H2F h2 = dgs.get(TabGroup.DC).get(4).getItem(0,0).getH2F("hi"+type+region);
                 GraphErrors meanP = new GraphErrors("meanP");
                 meanP.setTitleX("#theta (deg)");
                 meanP.setTitleY("edge (cm)");
@@ -296,36 +313,40 @@ public class Fiducial {
                     H1F h1 = slices.get(itheta);
                     h1.setLineColor(icol);
                     h1.setTitle("#theta="+h2.getDataY(itheta)+"(deg)");
-                    dgs.get(TabGroup.DC).get(60+region).addDataSet(h1, itheta);
-                    if(Fiducial.getIntegralIDataSet(h1, 7.5, 8.5)<5) continue;
-                    if(Fiducial.getIntegralIDataSet(h1, 9.5, 10.5) < Fiducial.getIntegralIDataSet(h1, 7.5, 8.5)*0.8) continue;
-                    EdgeSlice f1 = new EdgeSlice("f1", -8, 8);
+                    dgs.get(TabGroup.DC).get(6).getItem(0,region).addDataSet(h1, itheta);
+                    double xmax = h1.getDataX(h1.getDataSize(0)-1)*0.8;
+                    double dx = h1.getDataX(1)-h1.getDataX(0);
+                    if(Fiducial.getIntegralIDataSet(h1, xmax-dx, xmax+dx)<5) continue;
+                    if(Fiducial.getIntegralIDataSet(h1, xmax, xmax+2*dx) < Fiducial.getIntegralIDataSet(h1, xmax-2*dx, xmax)*0.8) continue;
+                    EdgeSlice f1 = new EdgeSlice("f1", 0, xmax);
                     f1.setParameter(0, h1.getMax());
-                    f1.setParameter(1, 3);
-                    f1.setParameter(2, 1);
+                    if(region==1) f1.setParameter(1, 3);
+                    if(region==2) f1.setParameter(1, 1);
+                    if(region==3) f1.setParameter(1, 8);
+                    f1.setParameter(2, 0.5);
                     f1.setParameter(3, 0);
-                    f1.setParameter(4, h1.getMax());
-                    f1.setParameter(5,-3);
-                    f1.setParameter(6, 1);
-                    f1.setParameter(7, 0);
+//                    f1.setParameter(4, h1.getMax());
+//                    f1.setParameter(5,-3);
+//                    f1.setParameter(6, 1);
+//                    f1.setParameter(7, 0);
                     f1.setParLimits(2,   0.0,  5.0);
                     f1.setParLimits(3, -20.0, 20.0);
-                    f1.setParLimits(6,   0.0,  5.0);
-                    f1.setParLimits(7, -20.0, 20.0);
+//                    f1.setParLimits(6,   0.0,  5.0);
+//                    f1.setParLimits(7, -20.0, 20.0);
                     f1.setLineWidth(2);
                     DataFitter.fit(f1, h1, "Q");
-                    if(f1.isFitValid() || true) {
+                    if(f1.isFitValid() || false) {
                         meanP.addPoint(h2.getDataY(itheta), f1.getParameter(1), 0, f1.parameter(1).error());
-                        meanN.addPoint(h2.getDataY(itheta),-f1.getParameter(5), 0, f1.parameter(5).error());
+//                        meanN.addPoint(h2.getDataY(itheta),-f1.getParameter(5), 0, f1.parameter(5).error());
                         sigmaP.addPoint(h2.getDataY(itheta), Math.abs(f1.getParameter(2)), 0, f1.parameter(2).error());
-                        sigmaN.addPoint(h2.getDataY(itheta), Math.abs(f1.getParameter(6)), 0, f1.parameter(6).error());
+//                        sigmaN.addPoint(h2.getDataY(itheta), Math.abs(f1.getParameter(6)), 0, f1.parameter(6).error());
                     }
                 }
                 if(meanP.getDataSize(0)>0) {
-                    dgs.get(TabGroup.DC).get(8).addDataSet(meanP, region-1);
-                    dgs.get(TabGroup.DC).get(8).addDataSet(meanN, region-1);
-                    dgs.get(TabGroup.DC).get(8).addDataSet(sigmaP, region-1 + 3);
-                    dgs.get(TabGroup.DC).get(8).addDataSet(sigmaN, region-1 + 3);
+                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(meanP, region-1);
+//                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(meanN, region-1);
+                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(sigmaP, region-1 + 3);
+//                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(sigmaN, region-1 + 3);
                 }
             }
         }
@@ -339,28 +360,28 @@ public class Fiducial {
                     super.addParameter("mean1");
                     super.addParameter("sigma1");
                     super.addParameter("slope1");
-                    super.addParameter("amp2");
-                    super.addParameter("mean2");
-                    super.addParameter("sigma2");
-                    super.addParameter("slope2");
+//                    super.addParameter("amp2");
+//                    super.addParameter("mean2");
+//                    super.addParameter("sigma2");
+//                    super.addParameter("slope2");
             }
 
             @Override
             public double evaluate(double x){
                     double value = 0.0;
                     
-                    if(x>0) {
-                        if(x<this.getParameter(1)) 
-                            value = this.getParameter(0)*FunctionFactory.gauss(x,this.getParameter(1), this.getParameter(2));
+//                    if(x>0) {
+                        if(Math.abs(x)<this.getParameter(1)) 
+                            value = this.getParameter(0)*FunctionFactory.gauss(Math.abs(x),this.getParameter(1), this.getParameter(2));
                         else
-                            value = this.getParameter(0)+x*this.getParameter(3);
-                    }
-                    else {
-                        if(x>this.getParameter(5)) 
-                            value = this.getParameter(4)*FunctionFactory.gauss(x,this.getParameter(5), this.getParameter(6));
-                        else
-                            value = this.getParameter(4)+x*this.getParameter(7);
-                    }
+                            value = this.getParameter(0)+(Math.abs(x)-this.getParameter(1))*this.getParameter(3);
+//                    }
+//                    else {
+//                        if(x>this.getParameter(5)) 
+//                            value = this.getParameter(4)*FunctionFactory.gauss(x,this.getParameter(5), this.getParameter(6));
+//                        else
+//                            value = this.getParameter(4)+(x-this.getParameter(5))*this.getParameter(7);
+//                    }
                     return value;
             }
     }
@@ -376,6 +397,12 @@ public class Fiducial {
             for(IDataSet ds : dsList){
                 if(dir.getObject(folder, ds.getName())!=null) {
                     IDataSet dsread = dir.getObject(folder, ds.getName());
+                    if(dsread instanceof H1F) {
+                        H1F h1 = (H1F) dsread;
+                        Func1D f1 = (Func1D) dir.getObject(folder, "f"+h1.getName());
+                        if(f1!=null)
+                            h1.setFunction(f1);
+                    }
                     if(dsread instanceof H1F && ((H1F) dsread).getFunction()!=null) {
                         Func1D dsf = ((H1F) dsread).getFunction();
                         dsf.setLineColor(2);
@@ -398,6 +425,78 @@ public class Fiducial {
         return newGroup;
     }
 
+    public void readHistos(String fileName, String optStats) {
+        LOGGER.log(LEVEL,"Opening file: " + fileName);
+        TDirectory dir = new TDirectory();
+        dir.readFile(fileName);
+        for(TabGroup tab : dgs.keySet()) {
+            String folder = tab.getName();
+            for(int obs : dgs.get(tab).keySet()) {
+                String obsf = folder + obs;
+                IndexedList<DataGroup> list = dgs.get(tab).get(obs);
+                for(int sector=0; sector<=6; sector++) {
+                    for(int layer=0; layer<=3; layer++) {
+                        if(!list.hasItem(sector, layer))
+                            continue;
+                        String name = obsf + "S" + sector + "L" + layer;
+                        dir.cd("/" + folder + "/" + obsf + "/" + name);
+                        list.add(this.readDataGroup(folder + "/" + obsf + "/" + name, dir, list.getItem(sector, layer)), sector, layer);
+                    }
+                }
+            }
+        }
+    }
+
+    public void saveHistos(String fileName) {
+        LOGGER.log(LEVEL,"\nSaving histograms to file " + fileName);
+        TDirectory dir = new TDirectory();
+        for(TabGroup tab : dgs.keySet()) {
+            String folder = tab.getName();
+            dir.cd();
+            dir.mkdir("/" + folder);
+            dir.cd("/" + folder);
+            for(int obs : dgs.get(tab).keySet()) {
+                String obsf = folder + obs;
+                dir.mkdir("/" + folder + "/" + obsf);
+                dir.cd("/" + folder + "/" + obsf);
+                IndexedList<DataGroup> list = dgs.get(tab).get(obs);
+                for(int sector=0; sector<=6; sector++) {
+                    for(int layer=0; layer<=3; layer++) {
+                        if(!list.hasItem(sector, layer))
+                            continue;
+                        String name = obsf + "S" + sector + "L" + layer;
+                        dir.mkdir("/" + folder + "/" + obsf + "/" + name);
+                        dir.cd("/" + folder + "/" + obsf + "/" + name);
+                        System.out.println("Saving histograms in " + "/" + folder + "/" + obsf + "/" + name);
+                        this.writeDataGroup(dir, list.getItem(sector, layer));
+                    }
+                }
+            }
+        }
+        dir.writeFile(fileName);
+    }        
+
+    private void writeDataGroup(TDirectory dir, DataGroup dg) {
+        int nrows = dg.getRows();
+        int ncols = dg.getColumns();
+        int nds   = nrows*ncols;
+        for(int i=0; i<nds; i++) {
+            List<IDataSet> dsList = dg.getData(i);
+            for(IDataSet ds : dsList){
+//                    System.out.println("\t --> " + ds.getName());
+                dir.addDataSet(ds);
+                if(ds instanceof H1F) {
+                    H1F h1 = (H1F) ds;
+                    if(h1.getFunction()!=null) {
+                        Func1D f1 = h1.getFunction();
+                        f1.setName("f"+h1.getName());
+                        dir.addDataSet(f1);
+                    }
+                }
+            }
+        }
+    }
+        
     private static double getEfficiency(H1F hi) {
         
         double phiRef = 2;
@@ -537,26 +636,38 @@ public class Fiducial {
     }
         
     
-    public EmbeddedCanvasTabbed getCanvas() {
+    private EmbeddedCanvasTabbed getCanvas() {
         EmbeddedCanvasTabbed canvas = null;
-        for(TabGroup group : dgs.keySet()) {
-            for(int tab : dgs.get(group).keySet()) {
-                if(canvas == null)
-                    canvas = new EmbeddedCanvasTabbed(group.getName()+tab);
-                else
-                    canvas.addCanvas(group.getName()+tab);
-                canvas.getCanvas(group.getName()+tab).draw(dgs.get(group).get(tab));
-                for(EmbeddedPad pad : canvas.getCanvas(group.getName()+tab).getCanvasPads()) {
-                    pad.setTitleFont("Arial");
-                    pad.setTitleFontSize(18);
-                    if(!pad.getDatasetPlotters().isEmpty() && pad.getDatasetPlotters().get(0).getDataSet() instanceof H2F) 
-                        pad.getAxisZ().setLog(true);
-                    if(!pad.getDatasetPlotters().isEmpty() && pad.getDatasetPlotters().get(0).getDataSet() instanceof GraphErrors) {
-                        pad.getAxisX().setRange(5, 36);
-                        pad.getAxisY().setRange(0, 5);
+        for(TabGroup tab : dgs.keySet()) {
+            for(int observable : dgs.get(tab).keySet()) {
+                IndexedList<DataGroup> list = dgs.get(tab).get(observable);
+                for(int sector=0; sector<=6; sector++) {
+                    for(int layer=0; layer<=3; layer++) {
+                        if(!list.hasItem(sector, layer))
+                                continue;
+                        String name = tab.getName()+observable;
+                        if(sector!=0)
+                            name += "S"+sector;
+                        if(layer!=0)
+                            name += "L"+layer;
+                        if(canvas == null)
+                            canvas = new EmbeddedCanvasTabbed(name);
+                        else
+                            canvas.addCanvas(name);
+                        canvas.getCanvas(name).draw(list.getItem(sector, layer));
+                        for(EmbeddedPad pad : canvas.getCanvas(name).getCanvasPads()) {
+                            pad.setTitleFont("Arial");
+                            pad.setTitleFontSize(18);
+                            if(!pad.getDatasetPlotters().isEmpty() && pad.getDatasetPlotters().get(0).getDataSet() instanceof H2F) 
+                                pad.getAxisZ().setLog(true);
+                            if(!pad.getDatasetPlotters().isEmpty() && pad.getDatasetPlotters().get(0).getDataSet() instanceof GraphErrors) {
+                                pad.getAxisX().setRange(5, 36);
+                                pad.getAxisY().setRange(0, 10);
+                            }
+                        }
+                        if(tab==TabGroup.DC && observable<3) this.drawDC(canvas.getCanvas(name));
                     }
                 }
-                if(group==TabGroup.DC && tab<3) this.drawDC(canvas.getCanvas(group.getName()+tab));
             }
         }
         return canvas;
@@ -675,18 +786,22 @@ public class Fiducial {
         OptionParser parser = new OptionParser("fiducials");
         parser.setRequiresInputList(true);
         parser.addOption("-n","-1", "maximum number of events to process");
-        parser.addOption("-pid","0", "particlr id (0=all)");
+        parser.addOption("-o","", "output file name");
+        parser.addOption("-p","0", "particlr id (0=all)");
         parser.addOption("-s","0", "sector id (0=all)");
-//        parser.addOption("-w", "1", "open graphical window (1) or run in batch mode (0)");
+        parser.addOption("-d", "1", "open graphical window (1) or run in batch mode (0)");
+        parser.addOption("-r", "0", "read histogram file");
         parser.parse(args);
         
         
         int     maxEvents = parser.getOption("-n").intValue();
-        int     pid       = parser.getOption("-pid").intValue();
+        int     pid       = parser.getOption("-p").intValue();
         int     sector    = parser.getOption("-s").intValue();
-        boolean window    = true;//parser.getOption("-w").intValue()==1;
+        boolean display   = parser.getOption("-d").intValue()==1;
+        boolean read      = parser.getOption("-r").intValue()==1;
+        String  histos    = parser.getOption("-o").stringValue();
         
-        if(!window) System.setProperty("java.awt.headless", "true");
+        if(!display) System.setProperty("java.awt.headless", "true");
         DefaultLogger.debug();
         
         Fiducial analysis = new Fiducial();        
@@ -695,33 +810,38 @@ public class Fiducial {
         
         ProgressPrintout progress = new ProgressPrintout();
 
+        if(!read) {
+            for(int type=0; type<inputFiles.size(); type++) {
+                int counter=-1;
+                String input = inputFiles.get(type);
+                HipoDataSource  reader = new HipoDataSource();
+                reader.open(input);
+                while(reader.hasEvent()) {
 
-        for(int type=0; type<inputFiles.size(); type++) {
-            int counter=-1;
-            String input = inputFiles.get(type);
-            HipoDataSource  reader = new HipoDataSource();
-            reader.open(input);
-            while(reader.hasEvent()) {
-                
-                counter++;
-                
-                DataEvent ev = reader.getNextEvent();
+                    counter++;
 
-                analysis.processEvent(ev, type, pid, sector);
-                
-                progress.updateStatus();
-                
-                if(maxEvents>0){
-                    if(counter>=maxEvents) break;
+                    DataEvent ev = reader.getNextEvent();
+
+                    analysis.processEvent(ev, type, pid, sector);
+
+                    progress.updateStatus();
+
+                    if(maxEvents>0){
+                        if(counter>=maxEvents) break;
+                    }
+
                 }
-
-            }
-            progress.showStatus();
-            reader.close();
-        }   
+                progress.showStatus();
+                reader.close();
+            }   
+        }
+        else {
+            analysis.readHistos(inputFiles.get(0), "");
+        }
         analysis.analyzeHisto(0);
-    
-        if(window) {
+        if(!histos.isBlank())
+            analysis.saveHistos(histos);
+        if(display) {
             JFrame frame = new JFrame("Fiducials");
             frame.setSize(1500,1000);
             frame.add(analysis.getCanvas());
