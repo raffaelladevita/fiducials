@@ -316,14 +316,16 @@ public class Fiducial {
                     dgs.get(TabGroup.DC).get(6).getItem(0,region).addDataSet(h1, itheta);
                     double xmax = h1.getDataX(h1.getDataSize(0)-1)*0.8;
                     double dx = h1.getDataX(1)-h1.getDataX(0);
+                    double thrs = Fiducial.getThresholdCrossing(h1, 0.5);
                     if(Fiducial.getIntegralIDataSet(h1, xmax-dx, xmax+dx)<5) continue;
                     if(Fiducial.getIntegralIDataSet(h1, xmax, xmax+2*dx) < Fiducial.getIntegralIDataSet(h1, xmax-2*dx, xmax)*0.8) continue;
                     EdgeSlice f1 = new EdgeSlice("f1", 0, xmax);
                     f1.setParameter(0, h1.getMax());
-                    if(region==1) f1.setParameter(1, 3);
-                    if(region==2) f1.setParameter(1, 1);
-                    if(region==3) f1.setParameter(1, 8);
-                    f1.setParameter(2, 0.5);
+//                    if(region==1 || id==0) f1.setParameter(1, 3);
+//                    if(region==2 && id==1) f1.setParameter(1, 1);
+//                    if(region==3) f1.setParameter(1, 8);
+                    f1.setParameter(1, 2*thrs);
+                    f1.setParameter(2, thrs*0.3);
                     f1.setParameter(3, 0);
 //                    f1.setParameter(4, h1.getMax());
 //                    f1.setParameter(5,-3);
@@ -662,7 +664,7 @@ public class Fiducial {
                                 pad.getAxisZ().setLog(true);
                             if(!pad.getDatasetPlotters().isEmpty() && pad.getDatasetPlotters().get(0).getDataSet() instanceof GraphErrors) {
                                 pad.getAxisX().setRange(5, 36);
-                                pad.getAxisY().setRange(0, 10);
+                                pad.getAxisY().setRange(0, 15);
                             }
                         }
                         if(tab==TabGroup.DC && observable<3) this.drawDC(canvas.getCanvas(name));
