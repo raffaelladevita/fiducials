@@ -44,7 +44,7 @@ import org.jlab.utils.options.OptionParser;
  */
 public class Fiducial {
     // detector,  observable  
-    Map<TabGroup, Map<Integer,IndexedList<DataGroup>>> dgs = new LinkedHashMap<>();
+    Map<TabGroup, IndexedList<DataGroup>> dgs = new LinkedHashMap<>();
     
     double delta = 3;
     double[] thetas = {8, 15, 23};
@@ -89,16 +89,16 @@ public class Fiducial {
         GStyle.getH1FAttributes().setOptStat("");
 
         DataGroup dgEB   = new DataGroup(2, DataType.values().length);
-        DataGroup dgTraj = new DataGroup(3, 2);
-        DataGroup dgPhi  = new DataGroup(3, 2);
-        DataGroup dgCut  = new DataGroup(3, 2);
-        DataGroup dgEdge = new DataGroup(3, 2);
-        DataGroup dgPhiT = new DataGroup(3, 2);
-        DataGroup dgEdg1 = new DataGroup(6, 5);
-        DataGroup dgEdg2 = new DataGroup(6, 5);
-        DataGroup dgEdg3 = new DataGroup(6, 5);
-        DataGroup dgSecT = new DataGroup(3, 2);
-        DataGroup dgEff  = new DataGroup(3, 2);
+//        DataGroup dgTraj = new DataGroup(3, 2);
+//        DataGroup dgPhi  = new DataGroup(3, 2);
+//        DataGroup dgCut  = new DataGroup(3, 2);
+//        DataGroup dgEdge = new DataGroup(3, 2);
+//        DataGroup dgPhiT = new DataGroup(3, 2);
+//        DataGroup dgEdg1 = new DataGroup(6, 5);
+//        DataGroup dgEdg2 = new DataGroup(6, 5);
+//        DataGroup dgEdg3 = new DataGroup(6, 5);
+//        DataGroup dgSecT = new DataGroup(3, 2);
+//        DataGroup dgEff  = new DataGroup(3, 2);
         for(DataType type : DataType.values()) {
             H2F hiptheta   = new H2F("hiptheta"+type.getName(), type.getName(), 200, 0, 6, 200, 5, 45);
             hiptheta.setTitleX("p (GeV)");
@@ -108,66 +108,86 @@ public class Fiducial {
             hiphitheta.setTitleY("#theta (deg)");
             dgEB.addDataSet(hiptheta,   0+type.getId()*2);
             dgEB.addDataSet(hiphitheta, 1+type.getId()*2);
-            for(int i=0; i<3; i++) {
-                int region = i+1;
-                double size = 90+i*60;
-                H2F hi1 = new H2F("hi"+type.getName()+region, "Region "+region, 200, -size, size, 200, -size, size);  
-                hi1.setTitleX("y (cm)"); 
-                hi1.setTitleY("x (cm)"); 
-                H2F hi2 = new H2F("hi"+type.getName()+region, "Region"+region, 200, -30, 30, 200, 0, 50);  
-                hi2.setTitleX("#phi_t_r_a_j (deg)"); 
-                hi2.setTitleY("#theta_t_r_a_j (deg)"); 
-                H2F hi3 = new H2F("hi"+type.getName()+region, "Region"+region, 200, -size, size, 200, -size, size);  
-                hi3.setTitleX("y (cm)"); 
-                hi3.setTitleY("x (cm)"); 
-                for(int k=0; k<4; k++) {
-                    H1F hi4 = new H1F("hi"+type.getName()+region+k, "Region"+region, 100, -30, 30);  
-                    hi4.setTitleX("#phi_t_r_a_j (deg)"); 
-                    hi4.setTitleY("Counts"); 
-                    hi4.setLineColor(k+1);
-                    dgPhiT.addDataSet(hi4, i+type.getId()*3);
+//            for(int i=0; i<3; i++) {
+//                int region = i+1;
+//                double size = 90+i*60;
+//                H2F hi1 = new H2F("hi"+type.getName()+region, "Region "+region, 200, -size, size, 200, -size, size);  
+//                hi1.setTitleX("y (cm)"); 
+//                hi1.setTitleY("x (cm)"); 
+//                H2F hi2 = new H2F("hi"+type.getName()+region, "Region"+region, 200, -30, 30, 200, 0, 50);  
+//                hi2.setTitleX("#phi_t_r_a_j (deg)"); 
+//                hi2.setTitleY("#theta_t_r_a_j (deg)"); 
+//                H2F hi3 = new H2F("hi"+type.getName()+region, "Region"+region, 200, -size, size, 200, -size, size);  
+//                hi3.setTitleX("y (cm)"); 
+//                hi3.setTitleY("x (cm)"); 
+//                for(int k=0; k<4; k++) {
+//                    H1F hi4 = new H1F("hi"+type.getName()+region+k, "Region"+region, 100, -30, 30);  
+//                    hi4.setTitleX("#phi_t_r_a_j (deg)"); 
+//                    hi4.setTitleY("Counts"); 
+//                    hi4.setLineColor(k+1);
+//                    dgPhiT.addDataSet(hi4, i+type.getId()*3);
+//                }
+//                H2F hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 25, -10*0*region, 10*region, 30, 5, 35); 
+////                if(region==1)
+////                    hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 40, -10, 10, 30, 5, 35);   
+//                hi5.setTitleX("edge (cm)"); 
+//                hi5.setTitleY("#theta_t_r_a_j (deg)"); 
+//                for(int k=0; k<6; k++) {
+//                    H1F hi7 = new H1F("hi"+type.getName()+region+k, "Region"+region, 100, -30, 30);  
+//                    hi7.setTitleX("#phi_t_r_a_j (deg)"); 
+//                    hi7.setTitleY("Counts"); 
+//                    hi7.setLineColor(k+1);
+//                    dgSecT.addDataSet(hi7, i+type.getId()*3);
+//                }
+//                dgTraj.addDataSet(hi1, i+type.getId()*3);
+//                dgPhi.addDataSet(hi2,  i+type.getId()*3);
+//                dgCut.addDataSet(hi3, i+type.getId()*3);
+//                dgEdge.addDataSet(hi5, i+type.getId()*3);
+//            }
+        }
+        this.addDataGroup(TabGroup.KINEMATICS,  0, 0, 0, dgEB);
+        for(int sector=0; sector<=6; sector++) {
+            for(int layer=1; layer<=3; layer++) {
+                for(int charge=1; charge>=-1; charge-=2) {
+                    this.addDataGroup(TabGroup.DC, sector, layer, charge, this.createHistos(sector, layer, charge));
                 }
-                H2F hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 25, -10*0*region, 10*region, 30, 5, 35); 
-//                if(region==1)
-//                    hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 40, -10, 10, 30, 5, 35);   
-                hi5.setTitleX("edge (cm)"); 
-                hi5.setTitleY("#theta_t_r_a_j (deg)"); 
-                for(int k=0; k<6; k++) {
-                    H1F hi7 = new H1F("hi"+type.getName()+region+k, "Region"+region, 100, -30, 30);  
-                    hi7.setTitleX("#phi_t_r_a_j (deg)"); 
-                    hi7.setTitleY("Counts"); 
-                    hi7.setLineColor(k+1);
-                    dgSecT.addDataSet(hi7, i+type.getId()*3);
-                }
-                dgTraj.addDataSet(hi1, i+type.getId()*3);
-                dgPhi.addDataSet(hi2,  i+type.getId()*3);
-                dgCut.addDataSet(hi3, i+type.getId()*3);
-                dgEdge.addDataSet(hi5, i+type.getId()*3);
             }
         }
-        this.addDataGroup(TabGroup.KINEMATICS, 1, 0, 0, dgEB);
-        this.addDataGroup(TabGroup.DC, 1, 0, 0, dgTraj);
-        this.addDataGroup(TabGroup.DC, 2, 0, 0, dgCut);
-        this.addDataGroup(TabGroup.DC, 3, 0, 0, dgPhi);
-        this.addDataGroup(TabGroup.DC, 4, 0, 0, dgEdge);
-        this.addDataGroup(TabGroup.DC, 5, 0, 0, dgPhiT);
-        this.addDataGroup(TabGroup.DC, 6, 0, 1, dgEdg1);
-        this.addDataGroup(TabGroup.DC, 6, 0, 2, dgEdg2);
-        this.addDataGroup(TabGroup.DC, 6, 0, 3, dgEdg3);
-        this.addDataGroup(TabGroup.DC, 7, 0, 0, dgSecT);
-        this.addDataGroup(TabGroup.DC, 8, 0, 0, dgEff);
     }
     
-    
-    private void addDataGroup(TabGroup tab, int observable, int sector, int layer, DataGroup dg) {
+    private DataGroup createHistos(int sector, int layer, int charge) {
+        DataGroup dg = new DataGroup(5, DataType.values().length);
+        for(DataType type : DataType.values()) {
+            double size = 30+layer*60;
+            String title = type.getName()+"S"+sector+"L"+layer+"C"+charge;
+            H2F hi1 = new H2F("hi"+type.getName()+"xy", title, 200, -size, size, 200, -size, size);  
+            hi1.setTitleX("y (cm)"); 
+            hi1.setTitleY("x (cm)"); 
+            H2F hi2 = new H2F("hi"+type.getName()+"thetaphi", title,200, -30, 30, 200, 0, 50);  
+            hi2.setTitleX("#phi_t_r_a_j (deg)"); 
+            hi2.setTitleY("#theta_t_r_a_j (deg)"); 
+            H2F hi3 = new H2F("hi"+type.getName()+"xycut", title, 200, -size, size, 200, -size, size);  
+            hi3.setTitleX("y (cm)"); 
+            hi3.setTitleY("x (cm)"); 
+            H2F hi4 = new H2F("hi"+type.getName()+"thetaedge", title, 25, -10*0*layer, 10*layer, 30, 5, 35); 
+    //                if(region==1)
+    //                    hi5 = new H2F("hi"+type.getName()+region, "Region"+region, 40, -10, 10, 30, 5, 35);   
+            hi4.setTitleX("edge (cm)"); 
+            hi4.setTitleY("#theta_t_r_a_j (deg)"); 
+            dg.addDataSet(hi1, 0+5*type.getId());
+            dg.addDataSet(hi2, 1+5*type.getId());
+            dg.addDataSet(hi3, 2+5*type.getId());
+            dg.addDataSet(hi4, 3+5*type.getId());
+        }
+        return dg;
+    }
+    private void addDataGroup(TabGroup tab, int sector, int layer, int charge, DataGroup dg) {
         if(!dgs.containsKey(tab)) 
-            dgs.put(tab, new LinkedHashMap());
-        if(!dgs.get(tab).containsKey(observable)) 
-            dgs.get(tab).put(observable, new IndexedList(2));
+            dgs.put(tab, new IndexedList(3));
         
-        IndexedList<DataGroup> list = dgs.get(tab).get(observable);
+        IndexedList<DataGroup> list = dgs.get(tab);
         if(!list.hasItem(sector, layer))
-            list.add(dg, sector, layer);
+            list.add(dg, sector, layer, charge);
     }
     
     public void processEvent(DataEvent event, int id, int selectedPid, int sec) {
@@ -223,8 +243,6 @@ public class Fiducial {
                     if(recTrac.getShort("pindex", j)==pindex)
                         sector = recTrac.getByte("sector", j);
                 }
-
-                if(sec!=0 && sector!=sec) continue;
                 
                 Particle part = new Particle(pid,
                                              recPart.getFloat("px", pindex),
@@ -233,7 +251,7 @@ public class Fiducial {
                                              recPart.getFloat("vx", pindex),
                                              recPart.getFloat("vy", pindex),
                                              recPart.getFloat("vz", pindex));
-                if(part.p()<1) continue;
+                if(part.p()<1 || charge==0) continue;
                 
                 Point3D trajTilted = new Point3D(x, y, z);
                 Point3D trajLocal  = new Point3D(x, y, z);
@@ -248,42 +266,66 @@ public class Fiducial {
                     int region = (layer-1)/12+1;
                     double theta = Math.toDegrees(trajTilted.toVector3D().theta());
                     double phi   = Math.toDegrees(trajTilted.toVector3D().phi());
-                    
-                    if((region<3 && charge<0) || (region==3 && charge>0)) continue;
-                    
-                    //System.out.println(region);
-                    dgs.get(TabGroup.DC).get(1).getItem(0,0).getH2F("hi"+type+region).fill(trajLocal.x(), trajLocal.y());
-                    if(edge>delta) dgs.get(TabGroup.DC).get(2).getItem(0,0).getH2F("hi"+type+region).fill(trajLocal.x(), trajLocal.y());
-                    dgs.get(TabGroup.DC).get(3).getItem(0,0).getH2F("hi"+type+region).fill(phi, theta);
+                                        
+     //               System.out.println(region + " " + charge);
+                    dgs.get(TabGroup.DC).getItem(sector,region, charge).getH2F("hi"+type+"xy").fill(trajLocal.x(), trajLocal.y());
+                    if(edge>delta) dgs.get(TabGroup.DC).getItem(sector,region, charge).getH2F("hi"+type+"xycut").fill(trajLocal.x(), trajLocal.y());
+                    dgs.get(TabGroup.DC).getItem(sector,region, charge).getH2F("hi"+type+"thetaphi").fill(phi, theta);
                     if(edge>0) {
                         int side = 1;//(int) Math.signum(trajLocal.x());
-                        dgs.get(TabGroup.DC).get(4).getItem(0,0).getH2F("hi"+type+region).fill(edge*side, theta);
-                    }
-                    if(Math.abs(theta-thetas[1])<dtheta){
-                        for(int k=0; k<4; k++) {
-                            if(k==0 || edge>-delta+delta*k) 
-                                dgs.get(TabGroup.DC).get(5).getItem(0,0).getH1F("hi"+type+region+k).fill(phi);
-                        }
-                        if(edge>3) dgs.get(TabGroup.DC).get(7).getItem(0,0).getH1F("hi"+type+region+(sector-1)).fill(phi);
+                        dgs.get(TabGroup.DC).getItem(sector,region, charge).getH2F("hi"+type+"thetaedge").fill(edge*side, theta);
                     }
                 }
                 else if(detector==DetectorType.HTCC.getDetectorId()) {
-                    dgs.get(TabGroup.KINEMATICS).get(1).getItem(0,0).getH2F("hiptheta"+type).fill(part.p(), Math.toDegrees(part.theta()));
-                    dgs.get(TabGroup.KINEMATICS).get(1).getItem(0,0).getH2F("hiphitheta"+type).fill(Math.toDegrees(part.phi()), Math.toDegrees(part.theta()));
+                    dgs.get(TabGroup.KINEMATICS).getItem(0,0,0).getH2F("hiptheta"+type).fill(part.p(), Math.toDegrees(part.theta()));
+                    dgs.get(TabGroup.KINEMATICS).getItem(0,0, 0).getH2F("hiphitheta"+type).fill(Math.toDegrees(part.phi()), Math.toDegrees(part.theta()));
                 }
             }		
         }
 
     }
     
+    private void addHistos(DataGroup sum, DataGroup addendum) {
+        int nrows = sum.getRows();
+        int ncols = sum.getColumns();
+        int nds   = nrows*ncols;
+        for(int i=0; i<nds; i++) {
+            List<IDataSet> dsList = sum.getData(i);
+            for(IDataSet ds : dsList){
+//                    System.out.println("\t --> " + ds.getName());
+                if(ds instanceof H1F) {
+                    H1F h1 = (H1F) ds;
+                    H1F hi = addendum.getH1F(ds.getName());
+                    h1.add(hi);
+                }
+                else if(ds instanceof H2F) {
+                    H2F h1 = (H2F) ds;
+                    H2F hi = addendum.getH2F(ds.getName());
+                    h1.add(hi);
+                }
+            }
+        }    
+    }
     
     public void analyzeHisto(int nevents) {
-        
+        //create sector summed
+        IndexedList<DataGroup> list = dgs.get(TabGroup.DC);
+        for(int layer=1; layer<=3; layer++) {
+            for(int charge=1; charge>=-1; charge-=2) {
+                if(!list.hasItem(0, layer, charge))
+                    continue;
+                DataGroup dg0 = list.getItem(0, layer, charge);
+                for(int is=0; is<6; is++) {
+                    DataGroup dgi = list.getItem(is+1, layer, charge);
+                    this.addHistos(dg0,dgi);
+                }
+            }
+        }
         for(int id=0; id<2; id++) {
             String type = DataType.getType(id).getName();
             int icol = (id+1)*2;
             for(int region=1; region<4; region++) {
-                H2F h2 = dgs.get(TabGroup.DC).get(4).getItem(0,0).getH2F("hi"+type+region);
+                H2F h2 = dgs.get(TabGroup.DC).getItem(0,region,1).getH2F("hi"+type+"thetaedge");
                 GraphErrors meanP = new GraphErrors("meanP");
                 meanP.setTitleX("#theta (deg)");
                 meanP.setTitleY("edge (cm)");
@@ -313,7 +355,7 @@ public class Fiducial {
                     H1F h1 = slices.get(itheta);
                     h1.setLineColor(icol);
                     h1.setTitle("#theta="+h2.getDataY(itheta)+"(deg)");
-                    dgs.get(TabGroup.DC).get(6).getItem(0,region).addDataSet(h1, itheta);
+//                    dgs.get(TabGroup.DC).get(6).getItem(0,region).addDataSet(h1, itheta);
                     double xmax = h1.getDataX(h1.getDataSize(0)-1)*0.8;
                     double dx = h1.getDataX(1)-h1.getDataX(0);
                     if(Fiducial.getIntegralIDataSet(h1, xmax-dx, xmax+dx)<5) continue;
@@ -343,9 +385,9 @@ public class Fiducial {
                     }
                 }
                 if(meanP.getDataSize(0)>0) {
-                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(meanP, region-1);
+                    dgs.get(TabGroup.DC).getItem(0, region, 1).addDataSet(meanP, 4);
 //                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(meanN, region-1);
-                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(sigmaP, region-1 + 3);
+                    dgs.get(TabGroup.DC).getItem(0,region, 1).addDataSet(sigmaP, 4);
 //                    dgs.get(TabGroup.DC).get(8).getItem(0,0).addDataSet(sigmaN, region-1 + 3);
                 }
             }
@@ -431,16 +473,15 @@ public class Fiducial {
         dir.readFile(fileName);
         for(TabGroup tab : dgs.keySet()) {
             String folder = tab.getName();
-            for(int obs : dgs.get(tab).keySet()) {
-                String obsf = folder + obs;
-                IndexedList<DataGroup> list = dgs.get(tab).get(obs);
-                for(int sector=0; sector<=6; sector++) {
-                    for(int layer=0; layer<=3; layer++) {
-                        if(!list.hasItem(sector, layer))
+            IndexedList<DataGroup> list = dgs.get(tab);
+            for(int sector=0; sector<=6; sector++) {
+                for(int layer=0; layer<=3; layer++) {
+                    for(int charge=1; charge>=-1; charge-=2) {
+                        if(!list.hasItem(sector, layer, charge))
                             continue;
-                        String name = obsf + "S" + sector + "L" + layer;
-                        dir.cd("/" + folder + "/" + obsf + "/" + name);
-                        list.add(this.readDataGroup(folder + "/" + obsf + "/" + name, dir, list.getItem(sector, layer)), sector, layer);
+                        String name = "S" + sector + "L" + layer + "C" + charge;
+                        dir.cd("/" + folder + "/" + name);
+                        list.add(this.readDataGroup(folder + "/" + name, dir, list.getItem(sector, layer, charge)), sector, layer, charge);
                     }
                 }
             }
@@ -455,19 +496,16 @@ public class Fiducial {
             dir.cd();
             dir.mkdir("/" + folder);
             dir.cd("/" + folder);
-            for(int obs : dgs.get(tab).keySet()) {
-                String obsf = folder + obs;
-                dir.mkdir("/" + folder + "/" + obsf);
-                dir.cd("/" + folder + "/" + obsf);
-                IndexedList<DataGroup> list = dgs.get(tab).get(obs);
-                for(int sector=0; sector<=6; sector++) {
-                    for(int layer=0; layer<=3; layer++) {
-                        if(!list.hasItem(sector, layer))
+            IndexedList<DataGroup> list = dgs.get(tab);
+            for(int sector=0; sector<=6; sector++) {
+                for(int layer=0; layer<=3; layer++) {
+                    for(int charge=1; charge>=-1; charge-=2) {
+                        if(!list.hasItem(sector, layer, charge))
                             continue;
-                        String name = obsf + "S" + sector + "L" + layer;
-                        dir.mkdir("/" + folder + "/" + obsf + "/" + name);
-                        dir.cd("/" + folder + "/" + obsf + "/" + name);
-                        System.out.println("Saving histograms in " + "/" + folder + "/" + obsf + "/" + name);
+                        String name = "S" + sector + "L" + layer + "C" + charge;
+                        dir.mkdir("/" + folder + "/" + name);
+                        dir.cd("/" + folder + "/" + name);
+                        System.out.println("Saving histograms in " + "/" + folder + "/" + name);
                         this.writeDataGroup(dir, list.getItem(sector, layer));
                     }
                 }
@@ -639,22 +677,30 @@ public class Fiducial {
     private EmbeddedCanvasTabbed getCanvas() {
         EmbeddedCanvasTabbed canvas = null;
         for(TabGroup tab : dgs.keySet()) {
-            for(int observable : dgs.get(tab).keySet()) {
-                IndexedList<DataGroup> list = dgs.get(tab).get(observable);
-                for(int sector=0; sector<=6; sector++) {
-                    for(int layer=0; layer<=3; layer++) {
-                        if(!list.hasItem(sector, layer))
-                                continue;
-                        String name = tab.getName()+observable;
+            IndexedList<DataGroup> list = dgs.get(tab);
+            if(tab==TabGroup.KINEMATICS) {
+                canvas.addCanvas(tab.getName());
+                canvas.getCanvas().draw(list.getItem(0, 0, 0));
+            }
+            else {
+                
+            }
+            for(int sector=0; sector<=6; sector++) {
+                for(int layer=0; layer<=3; layer++) {
+                    for(int charge=1; charge>=-1; charge-=2) {
+                        if(!list.hasItem(sector, layer, charge))
+                            continue;
+                        String name = tab.getName();
                         if(sector!=0)
                             name += "S"+sector;
                         if(layer!=0)
                             name += "L"+layer;
+                        name += "C"+charge;
                         if(canvas == null)
                             canvas = new EmbeddedCanvasTabbed(name);
                         else
                             canvas.addCanvas(name);
-                        canvas.getCanvas(name).draw(list.getItem(sector, layer));
+                        canvas.getCanvas(name).draw(list.getItem(sector, layer, charge));
                         for(EmbeddedPad pad : canvas.getCanvas(name).getCanvasPads()) {
                             pad.setTitleFont("Arial");
                             pad.setTitleFontSize(18);
@@ -665,7 +711,7 @@ public class Fiducial {
                                 pad.getAxisY().setRange(0, 10);
                             }
                         }
-                        if(tab==TabGroup.DC && observable<3) this.drawDC(canvas.getCanvas(name));
+//                        if(tab==TabGroup.DC && observable<3) this.drawDC(canvas.getCanvas(name));
                     }
                 }
             }
