@@ -2,5 +2,5 @@
 
 SCRIPT_DIR=`dirname $0`
 
-java -Dsun.java2d.pmoffscreen=false -Xmx2048m -Xms1024m -cp "$SCRIPT_DIR/../target/fiducials-1.0-SNAPSHOT-jar-with-dependencies.jar" org.jlab.clas12.fiducials.Fiducial $*
+java -Dsun.java2d.pmoffscreen=false -Xmx4096m -Xms1024m -cp "$SCRIPT_DIR/../target/fiducials-1.0-SNAPSHOT-jar-with-dependencies.jar" org.jlab.clas12.fiducials.Fiducial $*
 
